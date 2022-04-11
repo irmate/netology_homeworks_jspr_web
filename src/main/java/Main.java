@@ -36,23 +36,11 @@ public class Main {
         server.listen(9999);
 
         while (true) {
-            threadPool.submit(() -> {
-                try (
-                        var socket = server.toAccept();
-                        var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                        var out = new BufferedOutputStream(socket.getOutputStream())
-                ) {
-                    final var requestLine = in.readLine();
-                    final var parts = requestLine.split(" ");
-                    if (parts.length != 3) {
-                        return;
-                    }
-                    var request = new Request(parts[0], parts[1], parts[2]);
-                    server.getHandlersStorage().get(request.getMethod()).get(request.getPath()).handle(request, out);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
+            try {
+                threadPool.submit(new ConnectionTask(server, server.toAccept()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

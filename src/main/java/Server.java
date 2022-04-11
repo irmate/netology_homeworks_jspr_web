@@ -21,13 +21,13 @@ public class Server {
         return serverSocket.accept();
     }
 
-    public void addHandler(String method, String path, Handler handler){
+    public void addHandler(String method, String path, Handler handler) {
         handlersStorage.put(method, handlers);
         Map<String, Handler> list = handlersStorage.get(method);
         list.put(path, handler);
     }
 
-    public Map<String, Map<String, Handler>> getHandlersStorage(){
+    public Map<String, Map<String, Handler>> getHandlersStorage() {
         return handlersStorage;
     }
 }
