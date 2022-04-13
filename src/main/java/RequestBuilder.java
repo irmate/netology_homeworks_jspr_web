@@ -6,6 +6,7 @@ public class RequestBuilder implements IRequestBuilder {
     private String path;
     private List<String> headers;
     private String body;
+    private String contentTypeBody;
 
     public RequestBuilder setMethod(String method) {
         requestBuilder.method = method;
@@ -27,11 +28,16 @@ public class RequestBuilder implements IRequestBuilder {
         return requestBuilder;
     }
 
+    public RequestBuilder setContentTypeBody(String contentTypeBody) {
+        requestBuilder.contentTypeBody = contentTypeBody;
+        return requestBuilder;
+    }
+
     @Override
     public Request build() {
         if (requestBuilder.body == null) {
             return new Request(requestBuilder.method, requestBuilder.path, requestBuilder.headers);
         }
-        return new Request(requestBuilder.method, requestBuilder.path, requestBuilder.headers, requestBuilder.body);
+        return new Request(requestBuilder.method, requestBuilder.path, requestBuilder.headers, requestBuilder.body, requestBuilder.contentTypeBody);
     }
 }

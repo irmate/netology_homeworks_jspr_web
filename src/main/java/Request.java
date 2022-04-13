@@ -10,7 +10,9 @@ public class Request {
     protected String path;
     protected List<String> headers;
     protected String body;
-    protected List<NameValuePair> nameValuePairList;
+    protected String contentTypeBody;
+
+    protected List<NameValuePair> QueryNameValuePairList;
 
     public Request(String method, String path, List<String> headers) {
         this.method = method;
@@ -18,11 +20,12 @@ public class Request {
         this.headers = headers;
     }
 
-    public Request(String method, String path, List<String> headers, String body) {
+    public Request(String method, String path, List<String> headers, String body, String contentTypeBody) {
         this.method = method;
         this.path = path;
         this.headers = headers;
         this.body = body;
+        this.contentTypeBody = contentTypeBody;
     }
 
     public String getMethod() {
@@ -31,10 +34,10 @@ public class Request {
 
     public String getPath() {
         getQueryParams();
-        if (nameValuePairList.get(0) == null) {
+        if (QueryNameValuePairList.get(0) == null) {
             return path;
         }
-        return nameValuePairList.get(0).toString();
+        return QueryNameValuePairList.get(0).toString();
     }
 
     public List<String> getHeaders() {
@@ -46,13 +49,27 @@ public class Request {
     }
 
     public List<String> getQueryParam(String name) {
-        return nameValuePairList.stream()
+        return QueryNameValuePairList.stream()
                 .filter(x -> x.getName().equals(name))
                 .map(NameValuePair::getValue)
                 .collect(Collectors.toList());
     }
 
     public void getQueryParams() {
-        nameValuePairList = URLEncodedUtils.parse(path, StandardCharsets.UTF_8, '?', '&', ';');
+        QueryNameValuePairList = URLEncodedUtils.parse(path, StandardCharsets.UTF_8, '?', '&', ';');
+    }
+
+    public List<String> getPostParam(String name) {
+        return getPostParams().stream()
+                .filter(x -> x.getName().equals(name))
+                .map(NameValuePair::getValue)
+                .collect(Collectors.toList());
+    }
+
+    public List<NameValuePair> getPostParams() {
+        if (contentTypeBody.equals("application/x-www-form-urlencoded")) {
+            return URLEncodedUtils.parse(body, StandardCharsets.UTF_8, '&', ';');
+        }
+        return null;
     }
 }

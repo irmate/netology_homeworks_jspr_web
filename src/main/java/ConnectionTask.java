@@ -121,6 +121,12 @@ public class ConnectionTask implements Runnable {
                     final var body = new String(bodyBytes);
                     builder.setBody(body);
                 }
+
+                final var contentType = extractHeader(headers, "Content-Type");
+                if (contentType.isPresent()) {
+                    var contentTypeBody = contentType.get();
+                    builder.setContentTypeBody(contentTypeBody);
+                }
             }
 
             var request = builder.build();
