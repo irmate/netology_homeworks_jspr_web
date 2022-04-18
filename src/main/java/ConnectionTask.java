@@ -1,3 +1,9 @@
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.RequestContext;
+import org.apache.commons.fileupload.portlet.PortletRequestContext;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.Arrays;
@@ -6,15 +12,19 @@ import java.util.Optional;
 
 public class ConnectionTask implements Runnable {
     private final Server server;
+    InputStream inputStream;
     private BufferedInputStream in;
     private BufferedOutputStream out;
     private final String GET = "GET";
     private final String POST = "POST";
 
+    int bodyLength;
+
     public ConnectionTask(Server server, Socket socket) {
         this.server = server;
         try {
-            in = new BufferedInputStream(socket.getInputStream());
+            inputStream = socket.getInputStream();
+            in = new BufferedInputStream(inputStream);
             out = new BufferedOutputStream(socket.getOutputStream());
         } catch (IOException e) {
             e.printStackTrace();
@@ -120,6 +130,8 @@ public class ConnectionTask implements Runnable {
                     final var bodyBytes = in.readNBytes(length);
                     final var body = new String(bodyBytes);
                     builder.setBody(body);
+
+                    bodyLength = length;
                 }
 
                 final var contentType = extractHeader(headers, "Content-Type");
@@ -131,9 +143,16 @@ public class ConnectionTask implements Runnable {
 
             var request = builder.build();
 
+            request.setInputStream(inputStream);
+            request.setBodyLength(bodyLength);
+
+            System.out.println(request.getParts().isEmpty());
+
             server.getHandlersStorage().get(request.getMethod()).get(request.getPath()).handle(request, out);
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (FileUploadException e) {
+            throw new RuntimeException(e);
         }
     }
 }
