@@ -1,13 +1,14 @@
 import java.io.*;
-import java.util.concurrent.Executors;
 
 public class Main {
     public static void main(String[] args) {
-        final var threadPool = Executors.newFixedThreadPool(64);
         final var server = new Server();
 
-        server.addHandler("GET", "/message", (Handler) (request, responseStream) -> {
+        server.addHandler("GET", "/message", (request, responseStream) -> {
             try {
+                request.getRequestLine().getNameValuePairList().stream()
+                        .filter(value -> !value.toString().startsWith("/"))
+                        .forEach(System.out::println);
                 responseStream.write((
                         "HTTP/1.1 200 OK\r\n" +
                                 "Content-Length: 0\r\n" +
@@ -19,8 +20,10 @@ public class Main {
                 e.printStackTrace();
             }
         });
-        server.addHandler("POST", "/message", (Handler) (request, responseStream) -> {
+
+        server.addHandler("POST", "/message", (request, responseStream) -> {
             try {
+                request.getBody().getNameValuePairList().forEach(System.out::println);
                 responseStream.write((
                         "HTTP/1.1 200 OK\r\n" +
                                 "Content-Length: 0\r\n" +
@@ -34,13 +37,5 @@ public class Main {
         });
 
         server.listen(9999);
-
-        while (true) {
-            try {
-                threadPool.submit(new ConnectionTask(server, server.toAccept()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }
