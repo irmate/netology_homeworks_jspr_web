@@ -6,7 +6,9 @@ public class Main {
 
         server.addHandler("GET", "/message", (request, responseStream) -> {
             try {
-                System.out.println(request.getRequestLine().getNameValuePairList());
+                request.getRequestLine().getNameValuePairList().stream()
+                        .filter(value -> !value.toString().startsWith("/"))
+                        .forEach(System.out::println);
                 responseStream.write((
                         "HTTP/1.1 200 OK\r\n" +
                                 "Content-Length: 0\r\n" +

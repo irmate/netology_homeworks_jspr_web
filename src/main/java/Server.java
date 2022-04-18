@@ -1,3 +1,4 @@
+import request.Request;
 import utils.Handler;
 
 import java.io.BufferedInputStream;
@@ -36,12 +37,14 @@ public class Server {
     private void connect(Socket socket) {
         try (var in = new BufferedInputStream(socket.getInputStream());
              var out = new BufferedOutputStream(socket.getOutputStream())) {
-            Processing processing = new Processing(in, out);
-            processing.start();
+            var request = new Request(in, out);
             handlersStorage
-                    .get(processing.getRequest().getRequestLine().getMethod())
-                    .get(processing.getRequest().getRequestLine().getPath())
-                    .handle(processing.getRequest(), out);
+                    .get(request.getRequestLine().getMethod())
+                    .get(request.getRequestLine().getPath())
+                    .handle(request, out);
+//            request.getRequestLine().getNameValuePairList().stream()
+//                    .filter(value -> !value.toString().startsWith("/"))
+//                    .forEach(System.out::println);
         } catch (IOException e) {
             e.printStackTrace();
         }

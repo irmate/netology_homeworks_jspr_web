@@ -35,7 +35,7 @@ public class RequestLine {
         return nameValuePairList;
     }
 
-    public void getQueryParams() {
+    private void getQueryParams() {
         nameValuePairList = URLEncodedUtils.parse(path, StandardCharsets.UTF_8, '?', '&', ';');
     }
 
