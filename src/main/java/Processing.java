@@ -1,29 +1,25 @@
+import request.Request;
+
 import java.io.*;
-import java.net.Socket;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-public class ConnectionTask implements Runnable {
-    private final Server server;
-    private BufferedInputStream in;
-    private BufferedOutputStream out;
+public class Processing{
+    private final BufferedInputStream in;
+    private final BufferedOutputStream out;
     private final String GET = "GET";
     private final String POST = "POST";
+    private Request request;
 
-    public ConnectionTask(Server server, Socket socket) {
-        this.server = server;
-        try {
-            in = new BufferedInputStream(socket.getInputStream());
-            out = new BufferedOutputStream(socket.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public Processing(BufferedInputStream in, BufferedOutputStream out) {
+        this.in = in;
+        this.out = out;
     }
 
     private void badRequest(BufferedOutputStream out) throws IOException {
         out.write((
-                "HTTP/1.1 400 Bad Request\r\n" +
+                "HTTP/1.1 400 Bad service.Request\r\n" +
                         "Content-Length: 0\r\n" +
                         "Connection: close\r\n" +
                         "\r\n"
@@ -52,17 +48,13 @@ public class ConnectionTask implements Runnable {
                 .findFirst();
     }
 
-    @Override
-    public void run() {
+    public void start() {
         final var allowedMethods = List.of(GET, POST);
-        RequestBuilder builder = new RequestBuilder();
-
         try {
             final var limit = 4096;
             in.mark(limit);
             final var buffer = new byte[limit];
             final var read = in.read(buffer);
-
             // ищем request line
             final var requestLineDelimiter = new byte[]{'\r', '\n'};
             final var requestLineEnd = indexOf(buffer, requestLineDelimiter, 0, read);
@@ -70,28 +62,17 @@ public class ConnectionTask implements Runnable {
                 badRequest(out);
                 return;
             }
-
             // читаем request line
             final var requestLine = new String(Arrays.copyOf(buffer, requestLineEnd)).split(" ");
             if (requestLine.length != 3) {
                 badRequest(out);
                 return;
             }
-
             final var method = requestLine[0];
             if (!allowedMethods.contains(method)) {
                 badRequest(out);
                 return;
             }
-            builder.setMethod(method);
-
-            final var path = requestLine[1];
-            if (!path.startsWith("/")) {
-                badRequest(out);
-                return;
-            }
-            builder.setPath(path);
-
             // ищем заголовки
             final var headersDelimiter = new byte[]{'\r', '\n', '\r', '\n'};
             final var headersStart = requestLineEnd + requestLineDelimiter.length;
@@ -100,7 +81,6 @@ public class ConnectionTask implements Runnable {
                 badRequest(out);
                 return;
             }
-
             // отматываем на начало буфера
             in.reset();
             // пропускаем requestLine
@@ -108,10 +88,9 @@ public class ConnectionTask implements Runnable {
 
             final var headersBytes = in.readNBytes(headersEnd - headersStart);
             final var headers = Arrays.asList(new String(headersBytes).split("\r\n"));
-            builder.setHeaders(headers);
 
             // для GET тела нет
-            if (!method.equals(GET)) {
+            if (!requestLine[0].equals(GET)) {
                 in.skip(headersDelimiter.length);
                 // вычитываем Content-Length, чтобы прочитать body
                 final var contentLength = extractHeader(headers, "Content-Length");
@@ -119,15 +98,15 @@ public class ConnectionTask implements Runnable {
                     final var length = Integer.parseInt(contentLength.get());
                     final var bodyBytes = in.readNBytes(length);
                     final var body = new String(bodyBytes);
-                    builder.setBody(body);
                 }
             }
-
-            var request = builder.build();
-
-            server.getHandlersStorage().get(request.getMethod()).get(request.getPath()).handle(request, out);
+            request = new Request(requestLine, headers);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public Request getRequest() {
+        return request;
     }
 }
