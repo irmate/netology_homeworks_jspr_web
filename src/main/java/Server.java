@@ -6,6 +6,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -15,12 +16,10 @@ public class Server {
     private final int POOL_SIZE = 64;
     private final ExecutorService threadPool;
     private final Map<String, Map<String, Handler>> handlersStorage;
-    private final Map<String, Handler> handlers;
 
     public Server() {
         threadPool = Executors.newFixedThreadPool(POOL_SIZE);
         handlersStorage = new ConcurrentHashMap<>();
-        handlers = new ConcurrentHashMap<>();
     }
 
     public void listen(int port) {
@@ -42,17 +41,13 @@ public class Server {
                     .get(request.getRequestLine().getMethod())
                     .get(request.getRequestLine().getPath())
                     .handle(request, out);
-//            request.getRequestLine().getNameValuePairList().stream()
-//                    .filter(value -> !value.toString().startsWith("/"))
-//                    .forEach(System.out::println);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void addHandler(String method, String path, Handler handler) {
-        handlersStorage.put(method, handlers);
-        Map<String, Handler> list = handlersStorage.get(method);
-        list.put(path, handler);
+        handlersStorage.put(method, new HashMap<>());
+        handlersStorage.get(method).put(path, handler);
     }
 }

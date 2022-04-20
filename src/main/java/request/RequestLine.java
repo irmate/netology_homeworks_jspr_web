@@ -5,7 +5,6 @@ import org.apache.http.client.utils.URLEncodedUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RequestLine {
     private final String method;
@@ -17,6 +16,7 @@ public class RequestLine {
         method = requestLine[0];
         path = requestLine[1];
         protocol = requestLine[2];
+        nameValuePairList = getQueryParams();
     }
 
     public String getMethod() {
@@ -24,25 +24,17 @@ public class RequestLine {
     }
 
     public String getPath() {
-        getQueryParams();
-        if (nameValuePairList.get(0) == null) {
-            return path;
-        }
-        return nameValuePairList.get(0).toString();
+        return nameValuePairList.get(0).getName();
     }
 
-    public List<NameValuePair> getNameValuePairList() {
-        return nameValuePairList;
+    private List<NameValuePair> getQueryParams() {
+        return URLEncodedUtils.parse(path, StandardCharsets.UTF_8, '?', '&', ';');
     }
 
-    private void getQueryParams() {
-        nameValuePairList = URLEncodedUtils.parse(path, StandardCharsets.UTF_8, '?', '&', ';');
-    }
-
-    public List<String> getQueryParam(String name) {
-        return nameValuePairList.stream()
+    public void getQueryParam(String name) {
+        nameValuePairList.stream()
                 .filter(x -> x.getName().equals(name))
                 .map(NameValuePair::getValue)
-                .collect(Collectors.toList());
+                .forEach(System.out::println);
     }
 }

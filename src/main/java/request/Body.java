@@ -1,17 +1,21 @@
 package request;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 import java.util.Optional;
 
 public class Body {
-
     private String contentBody;
     private String contentTypeBody;
 
     public Body(List<String> headers, BufferedInputStream in) {
-        parseBody(headers, in);
+        if (extractHeader(headers, "Content-Type").isPresent()) {
+            parseBody(headers, in);
+        }
+    }
+
+    public String getContentTypeBody() {
+        return contentTypeBody;
     }
 
     private Optional<String> extractHeader(List<String> headers, String header) {
@@ -24,10 +28,12 @@ public class Body {
 
     private void parseBody(List<String> headers, BufferedInputStream in) {
         try {
+            int length = 0;
+            byte[] bodyBytes = null;
             final var contentLength = extractHeader(headers, "Content-Length");
             if (contentLength.isPresent()) {
-                final var length = Integer.parseInt(contentLength.get());
-                final var bodyBytes = in.readNBytes(length);
+                length = Integer.parseInt(contentLength.get());
+                bodyBytes = in.readNBytes(length);
                 contentBody = new String(bodyBytes);
             }
             final var contentType = extractHeader(headers, "Content-Type");
