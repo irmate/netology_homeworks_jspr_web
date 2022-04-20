@@ -1,8 +1,6 @@
 package request;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
@@ -16,7 +14,7 @@ public class Request {
     public Request(BufferedInputStream in, BufferedOutputStream out) {
         this.requestLine = new RequestLine(parseRequestLineAndHeaders(in, out));
         if (!this.requestLine.getMethod().equals("GET")) {
-            this.body = new Body(headers, in);
+            body = new Body(headers, in);
         }
     }
 
@@ -86,10 +84,6 @@ public class Request {
 
     public RequestLine getRequestLine() {
         return requestLine;
-    }
-
-    public List<String> getHeaders() {
-        return headers;
     }
 
     public Body getBody() {

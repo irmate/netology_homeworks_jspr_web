@@ -1,26 +1,30 @@
+
 package request;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class Body {
-
     private String contentBody;
     private String contentTypeBody;
     private List<NameValuePair> nameValuePairList;
 
     public Body(List<String> headers, BufferedInputStream in) {
-        parseBody(headers, in);
-        if (contentTypeBody.equals("application/x-www-form-urlencoded")) {
-            nameValuePairList = getPostParams();
+        if (extractHeader(headers, "Content-Type").isPresent()) {
+            parseBody(headers, in);
+            if (contentTypeBody.equals("application/x-www-form-urlencoded")) {
+                nameValuePairList = getPostParams();
+            }
         }
+    }
+
+    public String getContentTypeBody() {
+        return contentTypeBody;
     }
 
     private Optional<String> extractHeader(List<String> headers, String header) {
@@ -33,10 +37,12 @@ public class Body {
 
     private void parseBody(List<String> headers, BufferedInputStream in) {
         try {
+            int length = 0;
+            byte[] bodyBytes = null;
             final var contentLength = extractHeader(headers, "Content-Length");
             if (contentLength.isPresent()) {
-                final var length = Integer.parseInt(contentLength.get());
-                final var bodyBytes = in.readNBytes(length);
+                length = Integer.parseInt(contentLength.get());
+                bodyBytes = in.readNBytes(length);
                 contentBody = new String(bodyBytes);
             }
             final var contentType = extractHeader(headers, "Content-Type");
@@ -48,18 +54,14 @@ public class Body {
         }
     }
 
-    public List<NameValuePair> getNameValuePairList() {
-        return nameValuePairList;
-    }
-
-    public List<String> getPostParam(String name) {
-        return getPostParams().stream()
+    public void getPostParam(String name) {
+        nameValuePairList.stream()
                 .filter(x -> x.getName().equals(name))
                 .map(NameValuePair::getValue)
-                .collect(Collectors.toList());
+                .forEach(System.out::println);
     }
 
-    public List<NameValuePair> getPostParams() {
+    private List<NameValuePair> getPostParams() {
         return URLEncodedUtils.parse(contentBody, StandardCharsets.UTF_8, '&', ';');
     }
 }
