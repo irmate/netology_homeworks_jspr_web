@@ -1,25 +1,18 @@
-import org.apache.commons.fileupload.RequestContext;
-import org.apache.commons.fileupload.servlet.ServletRequestContext;
+package request;
 
-import java.io.IOException;
+import org.apache.commons.fileupload.RequestContext;
+
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
 public class RequestContextIml implements RequestContext {
+    private final InputStream inputStream;
+    private final int contentLength;
+    private final String contentType;
 
-    String contentType;
-    int contentLength;
-    InputStream inputStream;
-
-//    public RequestContextIml(InputStream inputStream){
-//        this.inputStream = inputStream;
-//    }
-
-    public void setInputStream(InputStream inputStream) {
+    public RequestContextIml(InputStream inputStream, int contentLength, String contentType) {
         this.inputStream = inputStream;
-    }
-
-    public void setContentType(String contentType) {
+        this.contentLength = contentLength;
         this.contentType = contentType;
     }
 
@@ -40,7 +33,7 @@ public class RequestContextIml implements RequestContext {
     }
 
     @Override
-    public InputStream getInputStream() throws IOException {
+    public InputStream getInputStream() {
         return inputStream;
     }
 }
