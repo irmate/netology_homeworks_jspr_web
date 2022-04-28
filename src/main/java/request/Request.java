@@ -1,21 +1,33 @@
-
 package request;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Request {
     private final String GET = "GET";
     private final String POST = "POST";
-    private final RequestLine requestLine;
+    private RequestLine requestLine;
+    private URI uri;
     private List<String> headers;
     private Body body;
 
     public Request(BufferedInputStream in, BufferedOutputStream out) {
-        this.requestLine = new RequestLine(parseRequestLineAndHeaders(in, out));
-        if (!this.requestLine.getMethod().equals("GET")) {
-            body = new Body(headers, in);
+        try {
+            requestLine = new RequestLine(parseRequestLineAndHeaders(in, out));
+            uri = new URI(requestLine.getPath());
+            if (!requestLine.getMethod().equals("GET")) {
+                body = new Body(headers, in);
+            }
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
     }
 
@@ -89,5 +101,19 @@ public class Request {
 
     public Body getBody() {
         return body;
+    }
+
+    public URI getUri() {
+        return uri;
+    }
+
+    private List<NameValuePair> getQueryParams() {
+        return URLEncodedUtils.parse(uri, StandardCharsets.UTF_8);
+    }
+
+    public List<NameValuePair> getQueryParam(String name) {
+        return getQueryParams().stream()
+                .filter(x -> x.getName().equals(name))
+                .collect(Collectors.toList());
     }
 }
