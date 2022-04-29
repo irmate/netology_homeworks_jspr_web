@@ -6,7 +6,6 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -37,9 +36,18 @@ public class Server {
         try (var in = new BufferedInputStream(socket.getInputStream());
              var out = new BufferedOutputStream(socket.getOutputStream())) {
             var request = new Request(in, out);
+            if (handlersStorage.get(request.getRequestLine().getMethod()).get(request.getUri().getPath()) == null) {
+                out.write((
+                        "HTTP/1.1 404 Not Found.Handlers\r\n" +
+                                "Content-Length: 0\r\n" +
+                                "Connection: close\r\n" +
+                                "\r\n"
+                ).getBytes());
+                out.flush();
+            }
             handlersStorage
                     .get(request.getRequestLine().getMethod())
-                    .get(request.getRequestLine().getPath())
+                    .get(request.getUri().getPath())
                     .handle(request, out);
         } catch (IOException e) {
             e.printStackTrace();
@@ -47,7 +55,9 @@ public class Server {
     }
 
     public void addHandler(String method, String path, Handler handler) {
-        handlersStorage.put(method, new HashMap<>());
-        handlersStorage.get(method).put(path, handler);
+        if (!handlersStorage.containsKey(method)) {
+            handlersStorage.put(method, new ConcurrentHashMap<>());
+            handlersStorage.get(method).put(path, handler);
+        }
     }
 }
